@@ -12,9 +12,8 @@
 pragma solidity ^0.8.19;
 
 contract Fundraising {
- // 채워나갈곳
+  // 채워나갈곳
 }
-
 ```
 
 2. value 선언 (uint = uint256 / 8,16같이 숫자를 적어두지 않으면 256으로 default 갖는다.)
@@ -35,7 +34,7 @@ uint public finishTime = block.timestamp + 2 weeks;
 3. constructor 설정 (목표총량, owner)
 
 ```solidity
-constructor(uint _targetAmount){
+constructor(uint _targetAmount) {
   targetAmount = _targetAmount;
   owner = msg.sender;
 }
@@ -51,7 +50,7 @@ constructor(uint _targetAmount){
      - require(조건식, error) : 조건을 만족하지 못하면 error 문을 출력한다.
 
 ```solidity
-  receive() external payable {
+receive() external payable {
   require(block.timestamp < finishTime, "This funding is over");
   donations[msg.sender] += msg.value;
   raisedAmount += msg.value;
@@ -79,15 +78,15 @@ constructor(uint _targetAmount){
 4-3. funding 실패 시(모인 금액이 목표치보다 적을 때) 후원자들에게 환불해주는 기능
 
 ```solidity
-  function refund() external payable {
-    require(block.timestamp > finishTime, "The funding is not over yet");
-    require(raisedAmount < targetAmount, "The funding didn't reach the goal");
-    require(donations[msg.sender] > 0, "You didn't donate to this funding");
+function refund() external payable {
+  require(block.timestamp > finishTime, "The funding is not over yet");
+  require(raisedAmount < targetAmount, "The funding didn't reach the goal");
+  require(donations[msg.sender] > 0, "You didn't donate to this funding");
 
-    uint toRefund = donations[msg.sender];
-    donations[msg.sender] = 0;
-    payable(msg.sender).transfer(toRefund);
-  }
+  uint toRefund = donations[msg.sender];
+  donations[msg.sender] = 0;
+  payable(msg.sender).transfer(toRefund);
+}
 ```
 
 - block.timestamp > finishTime : funding 기간이 지났는가?
@@ -105,25 +104,27 @@ constructor(uint _targetAmount){
 1. 후원을 취소하는 기능
 
 ```solidity
-  function cancelFund() external payable {
-    require(block.timestamp < finishTime, "The funding is over ");
-    require(donations[msg.sender] > 0, "You didn't donate to this funding");
+function cancelFund() external payable {
+  require(block.timestamp < finishTime, "The funding is over ");
+  require(donations[msg.sender] > 0, "You didn't donate to this funding");
 
-    uint toRefund = donations[msg.sender];
-    donations[msg.sender] = 0;
-    payable(msg.sender).transfer(toRefund);
-  }
+  uint toRefund = donations[msg.sender];
+  donations[msg.sender] = 0;
+  raisedAmount -= toRefund;
+  payable(msg.sender).transfer(toRefund);
+}
 ```
 
 - block.timestamp < finishTime : funding 마감기한이 지나지 않았는가?
   - 지났으면 성공이든, 실패든 핵심기능이 동작한다.
 - donations[msg.sender] > 0 : request를 보낸 계정이 후원한 금액이 있는가?
-- 나머지 logic은 환불 logic과 같다.
+- 나머지 logic은 환불 logic과 같은데 raisedAmount -= toRefund;
+  - 총 추원금에서 환불한 후원금을 빼준다.
 
 2. 자신의 후원금을 확인할 수 있는 기능
 
 ```solidity
-  function getDonation() external view returns (uint) {
-    return donations[msg.sender];
-  }
+function getDonation() external view returns (uint) {
+  return donations[msg.sender];
+}
 ```
